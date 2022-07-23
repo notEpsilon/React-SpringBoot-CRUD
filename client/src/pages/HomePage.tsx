@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment, useCallback } from "react";
+import React, { useState, useEffect, Fragment, useCallback } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import Container from "../components/Container";
 import User from "../components/User";
@@ -10,10 +10,19 @@ export interface IUser {
   createdAt: string;
 }
 
+export interface PlainUser {
+  username: string;
+  password: string;
+}
+
 const HomePage: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<IUser[]>([]);
+  const [userData, setUserData] = useState<PlainUser>({
+    username: "",
+    password: ""
+  });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -37,6 +46,24 @@ const HomePage: React.FC = () => {
       method: "DELETE"
     });
     fetchUsers();
+  };
+
+  const addUser = async (user: PlainUser) => {
+    await fetch("http://localhost:8080/api/v1/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(user)
+    });
+    fetchUsers();
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    addUser(userData);
+    setUserData({ username: "", password: "" });
+    setOpen(false);
   };
 
   useEffect(() => {
@@ -89,7 +116,7 @@ const HomePage: React.FC = () => {
                       Add User
                     </Dialog.Title>
                     <div className="mt-2">
-                      <form className="space-y-3">
+                      <form className="space-y-3" onSubmit={handleSubmit}>
                         <div>
                           <label
                             className="mb-1 block text-sm font-medium"
@@ -101,6 +128,14 @@ const HomePage: React.FC = () => {
                             className="w-full rounded-md  border border-gray-300 py-[0.2rem] px-2 outline-indigo-500"
                             type="text"
                             id="username"
+                            value={userData.username}
+                            onChange={(e) =>
+                              setUserData((old) => ({
+                                ...old,
+                                username: e.target.value
+                              }))
+                            }
+                            required
                           />
                         </div>
                         <div>
@@ -114,19 +149,22 @@ const HomePage: React.FC = () => {
                             className="w-full rounded-md border border-gray-300 py-[0.2rem] px-2 outline-indigo-500"
                             type="password"
                             id="password"
+                            value={userData.password}
+                            onChange={(e) =>
+                              setUserData((old) => ({
+                                ...old,
+                                password: e.target.value
+                              }))
+                            }
+                            required
                           />
                         </div>
+                        <div className="mt-4">
+                          <button className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                            Confirm
+                          </button>
+                        </div>
                       </form>
-                    </div>
-
-                    <div className="mt-4">
-                      <button
-                        type="button"
-                        className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        onClick={() => setOpen(false)}
-                      >
-                        Confirm
-                      </button>
                     </div>
                   </Dialog.Panel>
                 </Transition.Child>
